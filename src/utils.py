@@ -1,0 +1,50 @@
+"""Вспомогательные функции и перечисления банковской системы."""
+
+from decimal import Decimal, InvalidOperation
+from enum import Enum
+import uuid
+
+from src.exceptions import InvalidOperationError
+
+
+class Currency(Enum):
+    """Поддерживаемые валюты счёта."""
+
+    RUB = "RUB"
+    USD = "USD"
+    EUR = "EUR"
+    KZT = "KZT"
+    CNY = "CNY"
+
+
+class AccountStatus(Enum):
+    """Статус банковского счёта."""
+
+    ACTIVE = "active"
+    FROZEN = "frozen"
+    CLOSED = "closed"
+
+
+def generate_account_number() -> str:
+    """Генерирует короткий уникальный номер счёта (8 символов)."""
+    return uuid.uuid4().hex[:8]
+
+
+def validate_amount(amount) -> Decimal:
+    """Проверяет и приводит сумму к Decimal."""
+    if amount is None:
+        raise InvalidOperationError("Сумма не может быть None")
+
+    try:
+        decimal_amount = Decimal(str(amount))
+    except (InvalidOperation, ValueError, TypeError) as exc:
+        raise InvalidOperationError(
+            f"Некорректная сумма: {amount!r}"
+        ) from exc
+
+    if decimal_amount <= 0:
+        raise InvalidOperationError(
+            "Сумма должна быть положительной"
+        )
+
+    return decimal_amount
