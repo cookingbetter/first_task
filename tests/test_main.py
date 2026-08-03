@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from src.exceptions import AccountFrozenError
+from src.exceptions import AccountFrozenError, InvalidOperationError
 from src.models import BankAccount
 from src.utils import AccountStatus, Currency
 
@@ -46,3 +46,29 @@ def test_frozen_account_operations(frozen_account: BankAccount):
 
     with pytest.raises(AccountFrozenError):
         frozen_account.withdraw(50)
+
+
+def test_invalid_currency_raises():
+    with pytest.raises(InvalidOperationError):
+        BankAccount(owner="Иванов Иван", currency="GBP")
+
+
+def test_invalid_status_raises():
+    with pytest.raises(InvalidOperationError):
+        BankAccount(owner="Иванов Иван", status="unknown")
+
+
+def test_valid_string_currency_and_status():
+    account = BankAccount(owner="Иванов Иван", currency="USD", status="frozen")
+    assert account.currency == Currency.USD
+    assert account.status == AccountStatus.FROZEN
+
+    # строковый "frozen" должен корректно блокировать операции
+    with pytest.raises(AccountFrozenError):
+        account.deposit(100)
+
+
+@pytest.mark.parametrize("amount", [float("inf"), float("nan")])
+def test_non_finite_amount_raises(active_account: BankAccount, amount):
+    with pytest.raises(InvalidOperationError):
+        active_account.deposit(amount)

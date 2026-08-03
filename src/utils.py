@@ -17,7 +17,7 @@ class Currency(Enum):
     CNY = "CNY"
 
 
-class AccountStatus(Enum):
+class  AccountStatus(Enum):
     """Статус банковского счёта."""
 
     ACTIVE = "active"
@@ -28,6 +28,30 @@ class AccountStatus(Enum):
 def generate_account_number() -> str:
     """Генерирует короткий уникальный номер счёта (8 символов)."""
     return uuid.uuid4().hex[:8]
+
+
+def validate_currency(value) -> Currency:
+    """Приводит значение к Currency (enum или строка), иначе InvalidOperationError."""
+    if isinstance(value, Currency):
+        return value
+    if isinstance(value, str):
+        try:
+            return Currency(value.upper())
+        except ValueError:
+            pass
+    raise InvalidOperationError(f"Недопустимая валюта: {value!r}")
+
+
+def validate_status(value) -> AccountStatus:
+    """Приводит значение к AccountStatus (enum или строка), иначе InvalidOperationError."""
+    if isinstance(value, AccountStatus):
+        return value
+    if isinstance(value, str):
+        try:
+            return AccountStatus(value.lower())
+        except ValueError:
+            pass
+    raise InvalidOperationError(f"Недопустимый статус: {value!r}")
 
 
 def validate_amount(amount) -> Decimal:
@@ -41,6 +65,11 @@ def validate_amount(amount) -> Decimal:
         raise InvalidOperationError(
             f"Некорректная сумма: {amount!r}"
         ) from exc
+
+    if not decimal_amount.is_finite():
+        raise InvalidOperationError(
+            f"Сумма должна быть конечным числом: {amount!r}"
+        )
 
     if decimal_amount <= 0:
         raise InvalidOperationError(

@@ -10,7 +10,14 @@ from src.exceptions import (
     InsufficientFundsError,
     InvalidOperationError,
 )
-from src.utils import AccountStatus, Currency, generate_account_number, validate_amount
+from src.utils import (
+    AccountStatus,
+    Currency,
+    generate_account_number,
+    validate_amount,
+    validate_currency,
+    validate_status,
+)
 
 
 class AbstractAccount(ABC):
@@ -29,7 +36,7 @@ class AbstractAccount(ABC):
         self.account_id = account_id or str(uuid.uuid4())
         self.owner = str(owner).strip()
         self._balance = validate_amount(balance) if balance else Decimal("0")
-        self.status = status
+        self.status = validate_status(status)
 
     @property
     def balance(self) -> Decimal:
@@ -68,7 +75,7 @@ class BankAccount(AbstractAccount):
             status=status,
         )
         self.account_number = account_number or generate_account_number()
-        self.currency = currency
+        self.currency = validate_currency(currency)
 
     def _check_active(self) -> None:
         """Проверяет, что счёт активен и допускает операции."""
@@ -131,4 +138,3 @@ class BankAccount(AbstractAccount):
             f"****{last_digits} | Статус: {self.status.value} | "
             f"Баланс: {self._balance} {self.currency.value}"
         )
-    
