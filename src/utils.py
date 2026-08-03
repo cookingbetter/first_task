@@ -54,6 +54,19 @@ def validate_status(value) -> AccountStatus:
     raise InvalidOperationError(f"Недопустимый статус: {value!r}")
 
 
+def validate_non_negative(value, name: str = "значение") -> Decimal:
+    """Приводит к Decimal и требует конечное значение >= 0."""
+    try:
+        result = Decimal(str(value))
+    except (InvalidOperation, ValueError, TypeError) as exc:
+        raise InvalidOperationError(f"Некорректное {name}: {value!r}") from exc
+    if not result.is_finite() or result < 0:
+        raise InvalidOperationError(
+            f"{name} должно быть неотрицательным числом: {value!r}"
+        )
+    return result
+
+
 def validate_amount(amount) -> Decimal:
     """Проверяет и приводит сумму к Decimal."""
     if amount is None:
