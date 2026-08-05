@@ -19,3 +19,19 @@ class InvalidOperationError(AccountError):
 
 class InsufficientFundsError(AccountError):
     """Недостаточно средств на счёте."""
+
+
+class AuthenticationError(AccountError):
+    """Неверные данные аутентификации (например, PIN)."""
+
+
+class ClientBlockedError(AccountError):
+    """Клиент заблокирован из-за превышения числа неверных попыток входа."""
+
+
+class OperationNotAllowedError(AccountError):
+    """Операция запрещена в текущее время (например, ночью)."""
+
+
+class AgeRestrictionError(AccountError):
+    """Возраст клиента не соответствует минимальному требованию."""

@@ -1,6 +1,16 @@
 """Демонстрация работы банковских счетов."""
 
-from src.exceptions import AccountFrozenError, InsufficientFundsError
+from datetime import date, datetime
+
+from src.bank import Bank, Client
+from src.exceptions import (
+    AccountFrozenError,
+    AgeRestrictionError,
+    AuthenticationError,
+    ClientBlockedError,
+    InsufficientFundsError,
+    OperationNotAllowedError,
+)
 from src.models import (
     BankAccount,
     InvestmentAccount,
@@ -107,6 +117,77 @@ def demo_day2() -> None:
         print(f"      info: {account.get_account_info()}")
 
 
+def demo_day3() -> None:
+    """Демонстрация системы Bank (День 3)."""
+    print("\n=== Демонстрация системы Bank ===\n")
+
+    # фиксированное дневное время, чтобы демонстрация работала в любое время суток
+    bank = Bank("МойБанк", clock=lambda: datetime(2026, 1, 1, 12, 0))
+
+    alice = Client(
+        full_name="Алиса Иванова",
+        birth_date=date(1990, 5, 20),
+        pin="1234",
+        contacts={"phone": "+7-900-000-0001", "email": "alice@example.com"},
+    )
+    bob = Client(
+        full_name="Борис Петров",
+        birth_date=date(1985, 3, 10),
+        pin="4321",
+        contacts={"phone": "+7-900-000-0002"},
+    )
+    bank.add_client(alice)
+    bank.add_client(bob)
+    print(f"1. Банк: {bank}")
+
+    print("\n2. Проверка возраста < 18:")
+    try:
+        Client(full_name="Юный Клиент", birth_date=date(2015, 1, 1), pin="0000")
+    except AgeRestrictionError as exc:
+        print(f"   {exc}")
+
+    print("\n3. Открытие счетов:")
+    acc_a = bank.open_account(alice.client_id, currency=Currency.RUB, balance=10000)
+    acc_b = bank.open_account(bob.client_id, currency=Currency.USD, balance=3000)
+    print(f"   Алиса: {acc_a}")
+    print(f"   Борис: {acc_b}")
+    print(f"   Общий баланс банка: {bank.get_total_balance()}")
+
+    print("\n4. Аутентификация (3 неверные попытки -> блокировка):")
+    print(f"   Верный PIN: {bank.authenticate_client(alice.client_id, '1234')}")
+    for attempt in range(1, 4):
+        try:
+            bank.authenticate_client(bob.client_id, "0000")
+        except AuthenticationError as exc:
+            print(f"   Попытка {attempt}: {exc}")
+        except ClientBlockedError as exc:
+            print(f"   Попытка {attempt}: {exc}")
+
+    print("\n5. Заморозка / разморозка счёта:")
+    bank.freeze_account(acc_a.account_number)
+    print(f"   После freeze: {acc_a.status.value}")
+    bank.unfreeze_account(acc_a.account_number)
+    print(f"   После unfreeze: {acc_a.status.value}")
+
+    print("\n6. Поиск счетов по владельцу 'алиса':")
+    for found in bank.search_accounts(owner="алиса"):
+        print(f"   {found}")
+
+    print("\n7. Рейтинг клиентов по балансу:")
+    for client, total in bank.get_clients_ranking():
+        print(f"   {client.full_name}: {total}")
+
+    print("\n8. Ночной запрет операций (03:00):")
+    night_bank = Bank("НочнойБанк", clock=lambda: datetime(2026, 1, 1, 3, 0))
+    night_bank.add_client(alice)
+    try:
+        night_bank.open_account(alice.client_id, balance=100)
+    except OperationNotAllowedError as exc:
+        print(f"   {exc}")
+    print(f"   Подозрительных действий зафиксировано: {len(night_bank.suspicious_activities)}")
+
+
 if __name__ == "__main__":
     main()
-    demo_day2()
+    # demo_day2()
+    demo_day3()

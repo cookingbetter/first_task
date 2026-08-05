@@ -1,5 +1,6 @@
 """Вспомогательные функции и перечисления банковской системы."""
 
+from datetime import date
 from decimal import Decimal, InvalidOperation
 from enum import Enum
 import uuid
@@ -17,12 +18,19 @@ class Currency(Enum):
     CNY = "CNY"
 
 
-class  AccountStatus(Enum):
+class AccountStatus(Enum):
     """Статус банковского счёта."""
 
     ACTIVE = "active"
     FROZEN = "frozen"
     CLOSED = "closed"
+
+
+class ClientStatus(Enum):
+    """Статус клиента банка."""
+
+    ACTIVE = "active"
+    BLOCKED = "blocked"
 
 
 def generate_account_number() -> str:
@@ -90,3 +98,24 @@ def validate_amount(amount) -> Decimal:
         )
 
     return decimal_amount
+
+
+def calculate_age(birth_date: date, today: date | None = None) -> int:
+    """Вычисляет число полных лет на дату today (по умолчанию сегодня)."""
+    if not isinstance(birth_date, date):
+        raise InvalidOperationError(
+            f"Дата рождения должна быть date: {birth_date!r}"
+        )
+    today = today or date.today()
+    years = today.year - birth_date.year
+    if (today.month, today.day) < (birth_date.month, birth_date.day):
+        years -= 1
+    return years
+
+
+def validate_pin(value) -> str:
+    """Проверяет, что PIN — строка ровно из 4 цифр."""
+    pin = str(value)
+    if len(pin) != 4 or not pin.isdigit():
+        raise InvalidOperationError("PIN должен состоять ровно из 4 цифр")
+    return pin
